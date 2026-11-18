@@ -1,0 +1,28 @@
+name: Cross-format controls
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check out the upstream revision targeted by the patch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: hudson-trading/wavetools
+          ref: 2a0bf2f868e02107d22753464e1d89b2cf21abde
+          path: wavetools
+          persist-credentials: false
+      - name: Build and test the native integration
+        working-directory: wavetools
+        run: |
+          git apply --check ../upstream/ghw-cross-format.patch
+          git apply ../upstream/ghw-cross-format.patch
+          cargo test --locked --test diff_test
+      - name: Run the portable VCD and FST controls
+        run: python3 run_cases.py --wavediff wavetools/target/debug/wavediff

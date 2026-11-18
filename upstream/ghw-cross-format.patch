@@ -1,0 +1,422 @@
+diff --git a/tests/data/ghw-cross-format/README.md b/tests/data/ghw-cross-format/README.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..d0197549b9879b4f8b6e9ec286ec24f187fd88db
+--- /dev/null
++++ b/tests/data/ghw-cross-format/README.md
+@@ -0,0 +1,17 @@
++# GHDL cross-format fixtures
++
++These are three runs of the adjacent VHDL design. All timescales are 1 fs.
++GHDL writes GHW and VCD in the same invocation. GTKWave vcd2fst converts that VCD
++to FST. Both projections therefore omit the VHDL record named packet. GHW retains it.
++
++| Run | Marker rises | packet.flag |
++| --- | --- | --- |
++| baseline | 10 ns | stays low |
++| delayed | 11 ns | stays low |
++| record_change | 10 ns | high from 10 to 20 ns |
++
++The marker falls at 20 ns. packet.valid rises at 10 ns and falls at 20 ns in
++all three runs. From this directory, regenerate with
++`python3 generate.py --output .` (GHDL with VHDL-2008 support and vcd2fst on
++PATH). Timestamp headers may change. The Rust tests use the checked-in fixtures
++and do not need either generator.
+diff --git a/tests/data/ghw-cross-format/baseline.fst b/tests/data/ghw-cross-format/baseline.fst
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4809b73cf4e333618a33e3c7b2668f84a970a00
+GIT binary patch
+literal 527
+zcmZQz00Tx(2o2>K>M~@8i*$4CXLSIHa6p7XBoma$h)#cW_i*u1C^LYH)1L}YO;Pa6
+zFH<nIP%t#NGBLI?G*&P&Ff!xiqK{i(ffRyl9V0L#p@5l@k+Fi&gn@yLg&8Wu$k4F%
+z5eo=I1vt@YW|&GzxDE(|k&z855(=fAKbZVuC@x9NOGzwBVPN?Gk0H4zzqmL)Ex#x?
+rv4nwvl_58=C_A-?fsx@414BV#a&~HoLT0f-UVe!}22fW{Do7UqTiz=S
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/baseline.ghw b/tests/data/ghw-cross-format/baseline.ghw
+new file mode 100644
+index 0000000000000000000000000000000000000000..3f97787c6cdc38e462e09d2dba1916e277b8d422
+GIT binary patch
+literal 340
+zcmXYs!A^rf5QhI*kk%?GC(quvw!VP@B1BW0LSi^IYoVs0wGEIOPkQj)C-DJ1_!d5a
+zPvOy-rIXBlv)S2y{<(?6yBEDL2OfxQLYmDW;c^C?{>Z1XkLifUbcM%Ni$%R{n)z~D
+zZ*+_0T0dc<>#D4=(~GKXoq7AZE77$2xzKfiy<V>hME5DOd@9ONoEMHFb$O;->JuJr
+zv+jWqCy^<wW1p~hK6HBCDUml&%5p8&c29<^7$co@isnmqMCk-UF3ykf{`qSY2TTD1
+y-l8B!n9Lyi_PI@V_LyR@Vv3&+rkFV}Wz-i_#(gtI|A#3Wf95?zcAXeKx&H&Nu{aR`
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/baseline.vcd b/tests/data/ghw-cross-format/baseline.vcd
+new file mode 100644
+index 0000000000000000000000000000000000000000..2590be91af0ff52c65f00cfd3aa149b24ab4a4ae
+--- /dev/null
++++ b/tests/data/ghw-cross-format/baseline.vcd
+@@ -0,0 +1,22 @@
++$date
++  Wed Nov 18 17:43:13 2026
++$end
++$version
++  GHDL v0
++$end
++$timescale
++  1 fs
++$end
++$scope module standard $end
++$upscope $end
++$scope module cross_format $end
++$var reg 1 ! marker $end
++$comment packet is not handled $end
++$upscope $end
++$enddefinitions $end
++#0
++0!
++#10000000
++1!
++#20000000
++0!
+diff --git a/tests/data/ghw-cross-format/cross_format.vhd b/tests/data/ghw-cross-format/cross_format.vhd
+new file mode 100644
+index 0000000000000000000000000000000000000000..c801e0b384b37bb0434ed138a4607f2befd9a6d9
+--- /dev/null
++++ b/tests/data/ghw-cross-format/cross_format.vhd
+@@ -0,0 +1,21 @@
++-- SPDX-License-Identifier: MIT
++entity cross_format is
++    generic (
++        marker_rise_ns : positive := 10;
++        toggle_flag    : boolean  := false
++    );
++end entity;
++
++architecture fixture of cross_format is
++    type packet_type is record
++        valid : bit;
++        flag  : bit;
++    end record;
++
++    signal marker : bit := '0';
++    signal packet : packet_type := ('0', '0');
++begin
++    marker <= '1' after marker_rise_ns * 1 ns, '0' after 20 ns;
++    packet.valid <= '1' after 10 ns, '0' after 20 ns;
++    packet.flag <= '1' after 10 ns, '0' after 20 ns when toggle_flag else '0';
++end architecture;
+diff --git a/tests/data/ghw-cross-format/delayed.fst b/tests/data/ghw-cross-format/delayed.fst
+new file mode 100644
+index 0000000000000000000000000000000000000000..f334a1dab1ded13a716e4e17e640cbbba63e0e08
+GIT binary patch
+literal 527
+zcmZQz00Tx(2o2>K>M~@8i*$4CXLSIHa6p7XBoma$h)#cW_i*u1C^LYH)1L}YO;Pa6
+zFH<nIP%t#NGBLI?G*&P&Ff!xiqK{i(ffRyl9V0L#p@5l@k+Fi&gn@yLg&8Wu$Z%le
+zeAWXima;$vIMHZkm`X{w4hVyhkqs&m3Z<PtnEYcXE=kNwNi0fXVEF%!A-O2OxHvv7
+uzbH4cgn@yTAvduoJGF>`k>L*mLqTG4c4~=2X0bwEeu+W`P*+YWNEZNH<SPsS
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/delayed.ghw b/tests/data/ghw-cross-format/delayed.ghw
+new file mode 100644
+index 0000000000000000000000000000000000000000..e65a899f0d1aca6f0f1b5f50728d4ecc29a8454f
+GIT binary patch
+literal 344
+zcmXYsF;2rk5Jms2jS~V^Tv5}xP3S3*ZD9)(qSz906)mxYA}1uWtsp8W(sK$V8V*2#
+z#348V=b&K5&Pp?HS2O$P&t>ReKk9AXb3kMg;$#9jHiyUI4qO_#7!PPjXSiF`n3e0Q
+zn$FkdO4pb#^*vU)Eb<Z?JuC9sn$}O79969!GF@ia>g6Isa1$d*$D$0yabhV_r$@@B
+zF5&hnX$yof3Yx32?-O>8`&P#}ByxI68Ma}Y_CcQ&L&T$2vH8-bARfU>#rgiceEgb<
+z@Vz@H&hKx$BLUBWm%@)Gke$2SDtkLjF<CIh(~c>IUYRoPlPM#=m@?ysDH?xG-A8f}
+IHG1;?2kRg?nE(I)
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/delayed.vcd b/tests/data/ghw-cross-format/delayed.vcd
+new file mode 100644
+index 0000000000000000000000000000000000000000..e3db05d0ef94fd45450faac81e463f87e4e09dbb
+--- /dev/null
++++ b/tests/data/ghw-cross-format/delayed.vcd
+@@ -0,0 +1,22 @@
++$date
++  Wed Nov 18 17:43:13 2026
++$end
++$version
++  GHDL v0
++$end
++$timescale
++  1 fs
++$end
++$scope module standard $end
++$upscope $end
++$scope module cross_format $end
++$var reg 1 ! marker $end
++$comment packet is not handled $end
++$upscope $end
++$enddefinitions $end
++#0
++0!
++#11000000
++1!
++#20000000
++0!
+diff --git a/tests/data/ghw-cross-format/generate.py b/tests/data/ghw-cross-format/generate.py
+new file mode 100644
+index 0000000000000000000000000000000000000000..c14482c1e4eab6696c9515ffffe0e2adc39d759b
+--- /dev/null
++++ b/tests/data/ghw-cross-format/generate.py
+@@ -0,0 +1,59 @@
++"""Regenerate the nine tiny fixtures with GHDL and GTKWave vcd2fst."""
++
++import argparse
++from pathlib import Path
++import shutil
++import subprocess
++import tempfile
++
++
++ROOT = Path(__file__).resolve().parent
++CASES = {
++    "baseline": (),
++    "delayed": ("-gmarker_rise_ns=11",),
++    "record_change": ("-gtoggle_flag=true",),
++}
++
++
++def tool_path(command):
++    resolved = shutil.which(command)
++    if resolved is None:
++        raise SystemExit(f"Executable could not be found: {command}")
++    return str(Path(resolved).resolve())
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--ghdl", default="ghdl")
++    parser.add_argument("--vcd2fst", default="vcd2fst")
++    parser.add_argument("--output", type=Path, default=ROOT / "fixtures")
++    args = parser.parse_args()
++    ghdl, converter = tool_path(args.ghdl), tool_path(args.vcd2fst)
++
++    with tempfile.TemporaryDirectory() as scratch:
++        work = Path(scratch)
++        shutil.copyfile(ROOT / "cross_format.vhd", work / "cross_format.vhd")
++        subprocess.run([ghdl, "-a", "--std=08", "cross_format.vhd"], cwd=work, check=True)
++        subprocess.run([ghdl, "-e", "--std=08", "cross_format"], cwd=work, check=True)
++        files = []
++        for name, generics in CASES.items():
++            vcd, ghw, fst = (f"{name}.{ext}" for ext in ("vcd", "ghw", "fst"))
++            subprocess.run(
++                [ghdl, "-r", "--std=08", "cross_format", *generics, f"--wave={ghw}", f"--vcd={vcd}"],
++                cwd=work,
++                check=True,
++            )
++            subprocess.run([converter, vcd, fst], cwd=work, check=True)
++            files.extend((ghw, vcd, fst))
++
++        for name in files:
++            if not (work / name).stat().st_size:
++                raise SystemExit(f"Empty fixture: {name}")
++        args.output.mkdir(parents=True, exist_ok=True)
++        for name in files:
++            shutil.copyfile(work / name, args.output / name)
++    print(f"Generated {len(files)} fixtures in {args.output}")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tests/data/ghw-cross-format/record_change.fst b/tests/data/ghw-cross-format/record_change.fst
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4809b73cf4e333618a33e3c7b2668f84a970a00
+GIT binary patch
+literal 527
+zcmZQz00Tx(2o2>K>M~@8i*$4CXLSIHa6p7XBoma$h)#cW_i*u1C^LYH)1L}YO;Pa6
+zFH<nIP%t#NGBLI?G*&P&Ff!xiqK{i(ffRyl9V0L#p@5l@k+Fi&gn@yLg&8Wu$k4F%
+z5eo=I1vt@YW|&GzxDE(|k&z855(=fAKbZVuC@x9NOGzwBVPN?Gk0H4zzqmL)Ex#x?
+rv4nwvl_58=C_A-?fsx@414BV#a&~HoLT0f-UVe!}22fW{Do7UqTiz=S
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/record_change.ghw b/tests/data/ghw-cross-format/record_change.ghw
+new file mode 100644
+index 0000000000000000000000000000000000000000..e9baaedf479b16c562ca3830d6993086fa564b15
+GIT binary patch
+literal 344
+zcmXYsu};H442FMSLRtz@GcmJeZFvKfL?i;0s)>X$RY#MeDlM&&sE7#$_C5&@z`$GZ
+z1Uv@=_N6}gKA-ISZQsP<-HYCr0}n(tA<bqGbJ+uSf8^8H$8<zvy29hC#iHIe&3w77
+zH@d}gt)H;bbye2b=|xqx&b)oym1tW1T<E&MUawaLqWctCJ{4ss_6tXmx;#@Z^$8ER
+zS(hNhNn}FnSSReA51pQOO5_ccvRuox-IF0J#z-ffqWRKYQ9418%j8FU|NOPd7)%J_
+zgSRNi5hgRp&V4SGy*;K3Sutg%52g%sU`o3$rnLNKN{=6=X#AOci0nEsdh-4UNdq_>
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/record_change.vcd b/tests/data/ghw-cross-format/record_change.vcd
+new file mode 100644
+index 0000000000000000000000000000000000000000..2590be91af0ff52c65f00cfd3aa149b24ab4a4ae
+--- /dev/null
++++ b/tests/data/ghw-cross-format/record_change.vcd
+@@ -0,0 +1,22 @@
++$date
++  Wed Nov 18 17:43:13 2026
++$end
++$version
++  GHDL v0
++$end
++$timescale
++  1 fs
++$end
++$scope module standard $end
++$upscope $end
++$scope module cross_format $end
++$var reg 1 ! marker $end
++$comment packet is not handled $end
++$upscope $end
++$enddefinitions $end
++#0
++0!
++#10000000
++1!
++#20000000
++0!
+diff --git a/tests/diff_test.rs b/tests/diff_test.rs
+index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19c066b73b 100644
+--- a/tests/diff_test.rs
++++ b/tests/diff_test.rs
+@@ -1364,3 +1364,136 @@ fn test_cli_filter_invalid_glob_exits_with_error() {
+         stderr
+     );
+ }
++
++mod ghw_cross_format {
++    use super::{run_wavecat_cli, run_wavediff_cli};
++    use std::process::Output;
++
++    const DIR: &str = "tests/data/ghw-cross-format";
++    const MARKER: &str = "cross_format.marker";
++
++    fn fixture(stem: &str, format: &str) -> String {
++        format!("{DIR}/{stem}.{format}")
++    }
++
++    fn check_code(output: &Output, code: i32) {
++        assert_eq!(output.status.code(), Some(code), "{output:?}");
++    }
++
++    fn packet_path(name: &str) -> Option<&'static str> {
++        let parts: Vec<_> = name
++            .split(|ch: char| !ch.is_ascii_alphanumeric() && ch != '_')
++            .filter(|part| !part.is_empty())
++            .collect();
++        match parts.as_slice() {
++            ["cross_format", "packet"] => Some("packet"),
++            ["cross_format", "packet", "valid"] => Some("valid"),
++            ["cross_format", "packet", "flag"] => Some("flag"),
++            _ => None,
++        }
++    }
++
++    #[test]
++    fn packet_paths_accept_only_the_fixture_record() {
++        assert_eq!(packet_path("/cross_format/packet"), Some("packet"));
++        assert_eq!(packet_path("cross_format.packet(valid)"), Some("valid"));
++        assert_eq!(packet_path("cross_format.packet.flag"), Some("flag"));
++        assert_eq!(packet_path("cross_format.packet_bad"), None);
++        assert_eq!(packet_path("cross_format.packet.other"), None);
++        assert_eq!(packet_path("other.packet.flag"), None);
++    }
++
++    fn check_marker(left: &str, right: &str, expected_tick: Option<u64>) {
++        // A filter matching neither input also returns success.
++        for path in [left, right] {
++            let names = run_wavecat_cli(&["--names", "--filter", MARKER, path]);
++            check_code(&names, 0);
++            assert_eq!(String::from_utf8_lossy(&names.stdout).trim(), MARKER);
++        }
++        let diff = run_wavediff_cli(&["--no-attrs", "--filter", MARKER, left, right]);
++        check_code(&diff, i32::from(expected_tick.is_some()));
++        if let Some(tick) = expected_tick {
++            let text = String::from_utf8_lossy(&diff.stdout);
++            let first = text.lines().find_map(|line| {
++                let mut words = line.split_whitespace();
++                let time = words.next()?.parse::<u64>().ok()?;
++                (words.next()? == MARKER).then_some(time)
++            });
++            assert_eq!(first, Some(tick), "{text}");
++        }
++    }
++
++    #[test]
++    fn vcd_fst_controls() {
++        for (left, right) in [("vcd", "fst"), ("fst", "vcd")] {
++            let baseline = fixture("baseline", left);
++            check_marker(&baseline, &fixture("baseline", right), None);
++            check_marker(&baseline, &fixture("delayed", right), Some(10_000_000));
++            // Changing only an undumped record field leaves both projections equal.
++            let diff = run_wavediff_cli(&[&baseline, &fixture("record_change", right)]);
++            check_code(&diff, 0);
++        }
++    }
++
++    #[test]
++    #[ignore = "requires GHW reader support (issue #39)"]
++    fn ghw_projection_and_delay() {
++        let ghw = fixture("baseline", "ghw");
++        for fmt in ["vcd", "fst"] {
++            let projection = fixture("baseline", fmt);
++            let delayed = fixture("delayed", "ghw");
++            for (left, right) in [(&ghw, &projection), (&projection, &ghw)] {
++                check_marker(left, right, None);
++                let diff = run_wavediff_cli(&["--no-attrs", left, right]);
++                check_code(&diff, 1);
++                let text = String::from_utf8_lossy(&diff.stderr);
++                let owner = format!("Only in {ghw}:");
++                let mut valid = false;
++                let mut flag = false;
++                for name in text
++                    .lines()
++                    .skip_while(|line| line.trim() != owner)
++                    .skip(1)
++                    .take_while(|line| line.starts_with("    "))
++                {
++                    match packet_path(name) {
++                        Some("packet") => (valid, flag) = (true, true),
++                        Some("valid") => valid = true,
++                        Some("flag") => flag = true,
++                        _ => panic!("Unexpected GHW-only signal {name}: {text}"),
++                    }
++                }
++                assert!(valid && flag, "Incomplete record inventory: {text}");
++                assert!(!text.contains(&format!("Only in {projection}:")), "{text}");
++            }
++            check_marker(&projection, &delayed, Some(10_000_000));
++            check_marker(&delayed, &projection, Some(10_000_000));
++        }
++    }
++
++    #[test]
++    #[ignore = "requires GHW reader support (issue #39)"]
++    fn ghw_preserves_record_only_change() {
++        let baseline = fixture("baseline", "ghw");
++        let changed = fixture("record_change", "ghw");
++        check_marker(&baseline, &changed, None);
++        let diff = run_wavediff_cli(&["--no-attrs", &baseline, &changed]);
++        check_code(&diff, 1);
++        assert!(!String::from_utf8_lossy(&diff.stderr).contains("Signal name mismatch:"));
++        let text = String::from_utf8_lossy(&diff.stdout);
++        // The reader may represent the record as an aggregate or separate fields.
++        let mut ticks = Vec::new();
++        for line in text.lines() {
++            let mut words = line.split_whitespace();
++            let time = words.next().unwrap().parse::<u64>().unwrap();
++            let name = words.next().unwrap();
++            let expected_signal = matches!(packet_path(name), Some("packet" | "flag"));
++            let value_diff = line.contains("!=")
++                || line.contains("missing time in file")
++                || line.contains("only in file");
++            assert!(expected_signal && value_diff, "{line}");
++            ticks.push(time);
++        }
++        assert_eq!(ticks.into_iter().min(), Some(10_000_000), "{text}");
++    }
++}

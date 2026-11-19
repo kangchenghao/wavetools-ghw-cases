@@ -1,4 +1,4 @@
-"""Regenerate the nine tiny fixtures with GHDL and GTKWave vcd2fst."""
+"""Regenerate the GHW, VCD, VCD-derived FST and native FST fixtures."""
 
 import argparse
 from pathlib import Path
@@ -38,13 +38,17 @@ def main():
         files = []
         for name, generics in CASES.items():
             vcd, ghw, fst = (f"{name}.{ext}" for ext in ("vcd", "ghw", "fst"))
+            native_fst = f"{name}.native.fst"
+            simulate = [ghdl, "-r", "--std=08", "cross_format", *generics]
             subprocess.run(
-                [ghdl, "-r", "--std=08", "cross_format", *generics, f"--wave={ghw}", f"--vcd={vcd}"],
+                [*simulate, f"--wave={ghw}", f"--vcd={vcd}"],
                 cwd=work,
                 check=True,
             )
             subprocess.run([converter, vcd, fst], cwd=work, check=True)
-            files.extend((ghw, vcd, fst))
+            # A separate run with identical stimulus exercises GHDL's own FST writer.
+            subprocess.run([*simulate, f"--fst={native_fst}"], cwd=work, check=True)
+            files.extend((ghw, vcd, fst, native_fst))
 
         for name in files:
             if not (work / name).stat().st_size:

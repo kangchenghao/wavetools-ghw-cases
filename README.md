@@ -1,8 +1,15 @@
 # Where did the VHDL record go?
 
-These nine small waveforms reproduce a case from [wavetools #39](https://github.com/hudson-trading/wavetools/issues/39). GHDL writes a scalar and a two-field VHDL record to GHW. In the VCD from the **same simulation run**, only the scalar survives. Converting that VCD to FST preserves exactly what reached VCD. Other FST producers can represent different signal inventories.
+GHDL 6.0.0 can write both fields of a VHDL record to FST. The route to the file matters. With the same circuit and stimulus, these are the signal inventories we observed:
 
-A comparison of two files can therefore agree on every exported value while missing an actual change in the circuit.
+| File in `fixtures/` | How it was made | Signals present in this circuit |
+| --- | --- | --- |
+| `*.ghw` | GHDL `--wave` | `marker` and both fields of `packet` |
+| `*.native.fst` | GHDL `--fst`, in a separate simulation with identical generics | `marker`, `packet.valid`, `packet.flag` |
+| `*.vcd` | GHDL `--vcd`, emitted alongside GHW | `marker` only |
+| `baseline.fst`, `delayed.fst`, `record_change.fst` | GTKWave `vcd2fst` on those VCDs | `marker` only |
+
+The [discussion in wavetools #39](https://github.com/hudson-trading/wavetools/issues/39#issuecomment-6989747366) prompted the direct FST control. The GHDL VCD export omits the record. The proposed wavetools tests check how a GHW reader compares values that **are present** and reports signals present on only one side.
 
 ## Run the controls
 
@@ -12,9 +19,14 @@ With Python 3.8+ and [wavediff](https://github.com/hudson-trading/wavetools/rele
 python run_cases.py
 ```
 
-All inputs are included. You can also point to a binary with `--wavediff /path/to/wavediff`, or save the individual results with `--json results.json`.
+All inputs are included. The 22 VCD/FST controls passed with wavediff 0.1.3. You can point to another binary with `--wavediff /path/to/wavediff`, or save individual results with `--json results.json`.
 
-**Observed with wavediff 0.1.3.** All 10 VCD/FST comparisons pass. The delayed marker is detected at 10 ns in both input orders. A change confined to the record leaves the VCD and VCD-derived FST identical as waveforms.
+**Try the record-only change with wavediff 0.1.3.** The first command below reports the flag at tick 10,000,000 (10 ns) and exits 1. The second exits 0. GHDL had already dropped the flag when it wrote the VCDs used for the second pair.
+
+```sh
+wavediff --no-attrs fixtures/baseline.native.fst fixtures/record_change.native.fst
+wavediff --no-attrs fixtures/baseline.fst fixtures/record_change.fst
+```
 
 ## Exercise a GHW reader
 
@@ -22,11 +34,12 @@ All inputs are included. You can also point to a binary with `--wavediff /path/t
 python run_cases.py --with-ghw --wavediff /path/to/candidate/wavediff
 ```
 
-This adds 16 required comparisons. With v0.1.3 all 16 reach the binary and exit 2 because it cannot read GHW. The runner exits 1. The table describes the proposed behavior for a reader that supports the shared scalar and the record.
+This adds 24 required GHW comparisons. On v0.1.3, each GHW comparison reaches the binary and returns exit 2 because the reader is unavailable. The runner marks those comparisons as failures. The table describes the proposed behavior for a reader that exposes the shared record fields.
 
 | What to compare | Expected observation |
 | --- | --- |
-| Full baseline GHW vs. baseline VCD or FST, in both orders | Exit 1 and list the record (or its fields) on the GHW side. |
+| Baseline GHW vs. native FST | Corresponding fields agree. Comparing against the recording with only the flag changed must identify a difference at 10 ns. |
+| Full baseline GHW vs. baseline VCD or VCD-derived FST, in both orders | Exit 1 and list the record (or its fields) on the GHW side. |
 | Only `*.marker` on those files | Exit 0. Moving its rising edge to 11 ns must give exit 1 and a first difference at 10 ns. This companion check catches a filter that accidentally selects nothing. |
 | Baseline vs. record change, both GHW | The marker still agrees. The full comparison detects the changed record or flag at 10 ns. |
 
@@ -48,7 +61,7 @@ python generate.py --output regenerated
 python verify_fixtures.py --fixtures regenerated
 ```
 
-Verification uses GHDL's `ghwdump` and GTKWave's `fst2vcd`. Regeneration uses `ghdl` and `vcd2fst`. Each script accepts explicit executable paths with the corresponding `--toolname` option. The nine shipped files and nine fresh outputs were independently checked with GHDL 6.0.0 and GTKWave 3.3.100 tools on Windows. Regenerated headers can contain a different date. The check compares signal declarations and transitions.
+Verification uses GHDL's `ghwdump` and GTKWave's `fst2vcd` to inspect the declared signals and transitions independently of wavediff. Regeneration uses `ghdl` and `vcd2fst`. Each script accepts explicit executable paths with the corresponding `--toolname` option. The checked-in set covers three stimuli and four export routes. Regenerated headers can contain a different date.
 
 For an upstream checkout, a [self-contained Rust integration-test patch and its instructions](upstream/README.md) are included. The test cases are offered for coordination with the GHW reader author. [GHDL's waveform format notes](https://ghdl.github.io/ghdl/ghw/index.html) explain which information a VCD export can lose.
 

@@ -47,23 +47,22 @@ def read_vcd(text):
             name = "/".join([*scopes, words[3]])
             if name in ids:
                 raise ValueError(f"duplicate VCD declaration {name}")
-            ids[name] = (words[1], words[2])
-    expect("VCD declared signals", sorted(ids), [MARKER])
-    expect("VCD marker width", ids[MARKER][0], "1")
+            expect(f"VCD width of {name}", words[1], "1")
+            ids[name] = words[2]
     expect("VCD unclosed scopes", scopes, [])
     scale = re.search(r"\$timescale\s+(\d+)\s*(fs|ps|ns|us|ms|s)\s*\$end", header)
     if not scale:
         raise ValueError("missing or unsupported VCD timescale")
     tick = int(scale[1]) * FS_PER_UNIT[scale[2]]
-    trace = []
+    traces = {code: [] for code in ids.values()}
     time = 0
     for raw in body.splitlines():
         line = raw.strip()
         if line.startswith("#"):
             time = int(line[1:]) * tick
-        elif line and line[0].lower() in "01xz" and line[1:] == ids[MARKER][1]:
-            record_change(trace, time, line[0].lower())
-    return trace
+        elif line and line[0].lower() in "01xz" and line[1:] in traces:
+            record_change(traces[line[1:]], time, line[0].lower())
+    return {name: traces[code] for name, code in ids.items()}
 
 
 def read_ghw(text):
@@ -81,7 +80,7 @@ def read_ghw(text):
     expect("GHW packet fields", fields[1].split(), ["valid:", "bit;", "flag:", "bit;"])
     first, last = int(packet[2]), int(packet[3])
     expect("GHW packet width", last - first + 1, 2)
-    names = {int(marker[1]): "marker", first: "valid", last: "flag"}
+    names = {int(marker[1]): MARKER, first: f"{PACKET}/valid", last: f"{PACKET}/flag"}
     expect("GHW distinct scalar IDs", len(names), 3)
     traces = {name: [] for name in names.values()}
     time = None
@@ -102,17 +101,21 @@ def verify(args):
         rise = 11 if case == "delayed" else 10
         pulse = [(0, "0"), (10 * NS, "1"), (20 * NS, "0")]
         marker = [(0, "0"), (rise * NS, "1"), (20 * NS, "0")]
-        for extension in ("ghw", "vcd", "fst"):
+        projected = {MARKER: marker}
+        full = {**projected, f"{PACKET}/valid": pulse,
+                f"{PACKET}/flag": pulse if case == "record_change" else [(0, "0")]}
+        for extension in ("ghw", "vcd", "fst", "native.fst"):
             path = args.fixtures / f"{case}.{extension}"
             try:
                 if extension == "ghw":
                     actual = read_ghw(output(args.ghwdump, "-t", "-H", "-s", path))
-                    expect("marker", actual["marker"], marker)
-                    expect("packet.valid", actual["valid"], pulse)
-                    expect("packet.flag", actual["flag"], pulse if case == "record_change" else [(0, "0")])
                 else:
                     text = path.read_text(encoding="ascii") if extension == "vcd" else output(args.fst2vcd, path)
-                    expect("marker", read_vcd(text), marker)
+                    actual = read_vcd(text)
+                expected = full if extension in ("ghw", "native.fst") else projected
+                expect("declared signals", sorted(actual), sorted(expected))
+                for name, trace in expected.items():
+                    expect(name, actual[name], trace)
             except (OSError, ValueError, IndexError) as exc:
                 raise ValueError(f"{path}: {exc}") from exc
             print(f"PASS {path.name}")

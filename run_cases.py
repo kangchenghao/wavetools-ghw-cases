@@ -32,6 +32,12 @@ def controls():
     yield from both_orders("baseline.vcd", "delayed.fst", "marker-edge", MARKER_FILTER)
     yield from both_orders("baseline.vcd", "record_change.fst", "equal")
     yield from both_orders("baseline.fst", "record_change.vcd", "equal")
+    for projected in ("baseline.vcd", "baseline.fst"):
+        yield from both_orders("baseline.native.fst", projected, "packet-only-in-native-fst", ("--no-attrs",))
+    yield from both_orders("baseline.native.fst", "baseline.fst", "equal", MARKER_FILTER)
+    yield from both_orders("delayed.native.fst", "baseline.fst", "marker-edge", MARKER_FILTER)
+    yield from both_orders("baseline.native.fst", "record_change.native.fst", "packet-edge", ("--no-attrs",))
+    yield from both_orders("baseline.native.fst", "record_change.native.fst", "equal", MARKER_FILTER)
 
 
 def ghw_cases():
@@ -42,6 +48,12 @@ def ghw_cases():
         yield from both_orders("delayed.ghw", projected, "marker-edge", MARKER_FILTER)
     yield from both_orders("baseline.ghw", "record_change.ghw", "equal", MARKER_FILTER)
     yield from both_orders("baseline.ghw", "record_change.ghw", "packet-edge", ("--no-attrs",))
+    # Both writers captured the full design. A candidate should expose matching
+    # field names or otherwise align them when comparing the two formats.
+    for stem in ("baseline", "record_change"):
+        yield from both_orders(f"{stem}.ghw", f"{stem}.native.fst", "equal", ("--no-attrs",))
+    yield from both_orders("baseline.ghw", "record_change.native.fst", "packet-edge", ("--no-attrs",))
+    yield from both_orders("baseline.native.fst", "record_change.ghw", "packet-edge", ("--no-attrs",))
 
 
 def signal_parts(name):
@@ -54,7 +66,7 @@ def is_fixture_signal(name, candidates):
     return any(parts[-len(candidate):] == candidate for candidate in candidates)
 
 
-def packet_owner(output, ghw_file):
+def packet_owner(output, record_file):
     """Read the per-file signal inventory, ignoring unrelated diagnostics and value rows."""
     owner = None
     fields = {"valid", "flag"}
@@ -64,7 +76,7 @@ def packet_owner(output, ghw_file):
         if section:
             owner = section[1]
         elif line.startswith("    ") and owner:
-            if owner != ghw_file:
+            if owner != record_file:
                 return False
             parts = signal_parts(line)
             if parts[-2:] == ["cross_format", "packet"]:
@@ -113,9 +125,10 @@ def run(case, binary, directory):
     output = "\n".join(s.strip() for s in (proc.stderr, proc.stdout) if s.strip())
     fatal = re.search(r"^\s*(error:|fatal:|thread .* panicked)", output, re.I | re.M)
     passed = proc.returncode == expected and not fatal
-    if passed and case.expectation == "packet-only-in-ghw":
-        ghw_file = case.left if case.left.endswith(".ghw") else case.right
-        passed = packet_owner(output, ghw_file)
+    if passed and case.expectation in ("packet-only-in-ghw", "packet-only-in-native-fst"):
+        suffix = ".ghw" if case.expectation == "packet-only-in-ghw" else ".native.fst"
+        record_file = case.left if case.left.endswith(suffix) else case.right
+        passed = packet_owner(output, record_file)
     elif passed and case.expectation in ("marker-edge", "packet-edge"):
         passed = first_edge(output, case.expectation)
     return dict(args=args, expectation=case.expectation, expected_exit=expected,

@@ -1,19 +1,19 @@
 # Native wavetools integration tests
 
-The patch targets [wavetools main at `2a0bf2f`](https://github.com/hudson-trading/wavetools/tree/2a0bf2f868e02107d22753464e1d89b2cf21abde). Apply it from a clean checkout of that revision. It adds four tests to the existing Rust `diff_test` target, nine generated waveform files, the VHDL source, and a regeneration script. All checked-in waveforms use a 1 fs tick.
+The patch targets [wavetools main at `2a0bf2f`](https://github.com/hudson-trading/wavetools/tree/2a0bf2f868e02107d22753464e1d89b2cf21abde). Apply it from a clean checkout of that revision. It adds six tests to the Rust `diff_test` target, twelve small waveforms, the VHDL source, and a regeneration script. Every waveform uses a 1 fs tick.
 
 ```sh
 git apply --check /path/to/ghw-cross-format.patch
 git apply /path/to/ghw-cross-format.patch
-cargo test --test diff_test ghw_cross_format::
+cargo test --locked --test diff_test ghw_cross_format::
 ```
 
-The active tests exercise VCD and FST with the current reader and check the record-path assertions against positive and negative examples. Two more are marked `#[ignore]` until a GHW reader is available. Run all four on a candidate implementation with this command:
+Three tests run on the existing readers. They check scalar timing, field-path diagnostics and the difference between two FST export paths. GHDL 6.0.0 writes `packet.valid` and `packet.flag` when given `--fst`. Converting its VCD export to FST produces a trace containing only `marker`. The native FST control detects a flag-only change at 10 ns. The remaining three tests use GHW inputs. Run all six against a candidate reader with:
 
 ```sh
-cargo test --test diff_test ghw_cross_format:: -- --include-ignored
+cargo test --locked --test diff_test ghw_cross_format:: -- --include-ignored
 ```
 
-The GHW tests check a common marker in both comparison orders, the file that owns a missing record, a delayed edge, and a change visible only in the record. They allow an aggregate record or field paths in the diagnostic. The active control compares the marker inventory before trusting a filtered equality result. Once GHW is implemented and the tests pass, remove the two ignore attributes to run them by default.
+The GHW tests distinguish two behaviors. Against VCD or VCD-derived FST, the full comparison should report a record on the GHW side. Its diagnostic can name the aggregate or both fields. Against native FST, the proposed interoperability test uses the same flattened field paths that `wavecat --names` prints for native FST, including `cross_format.packet.flag`. It checks equality and a deliberate field-only change in both format orders. Each filtered comparison first verifies that the selected signal exists in both inputs. GHW readers that expose only an aggregate would need a field mapping to pass that interoperability test.
 
-Validation on Windows used the upstream v0.1.3 executables on files extracted from the patch. All 14 CLI invocations used by the active Rust control returned the expected results. Separate probes confirmed v0.1.3 rejects the GHW input (`wavediff` exit 2, `wavecat` exit 1). The patch applied cleanly and all nine files matched their sources byte-for-byte. The [Linux CI run](https://github.com/kangchenghao/wavetools-ghw-cases/actions/workflows/check.yml) builds the pinned upstream revision with the patch and executes the complete `diff_test` target, followed by the portable VCD/FST controls.
+On Windows, the upstream v0.1.3 executables gave the expected results on all 28 CLI invocations in the active Rust controls. The patch applied to the pinned revision, and its twelve waveform files matched the checked-in inputs byte-for-byte. The [Linux workflow](https://github.com/kangchenghao/wavetools-ghw-cases/actions/workflows/check.yml) builds the pinned revision with the patch and runs the full `diff_test` target followed by the portable controls.

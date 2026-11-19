@@ -1,14 +1,16 @@
 diff --git a/tests/data/ghw-cross-format/README.md b/tests/data/ghw-cross-format/README.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..d0197549b9879b4f8b6e9ec286ec24f187fd88db
+index 0000000000000000000000000000000000000000..82e67ae6f27030bc04104ab934a3382819a56aef
 --- /dev/null
 +++ b/tests/data/ghw-cross-format/README.md
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,19 @@
 +# GHDL cross-format fixtures
 +
-+These are three runs of the adjacent VHDL design. All timescales are 1 fs.
-+GHDL writes GHW and VCD in the same invocation. GTKWave vcd2fst converts that VCD
-+to FST. Both projections therefore omit the VHDL record named packet. GHW retains it.
++These are three configurations of the adjacent VHDL design. All timescales are
++1 fs. GHDL writes GHW and VCD in the same invocation. GTKWave vcd2fst converts
++that VCD to the plain `.fst` file. A separate GHDL run with identical inputs
++and `--fst` produces `.native.fst`. GHW and native FST both capture the record.
++VCD and the FST derived from it only capture the scalar marker.
 +
 +| Run | Marker rises | packet.flag |
 +| --- | --- | --- |
@@ -44,6 +46,20 @@ zPvOy-rIXBlv)S2y{<(?6yBEDL2OfxQLYmDW;c^C?{>Z1XkLifUbcM%Ni$%R{n)z~D
 zZ*+_0T0dc<>#D4=(~GKXoq7AZE77$2xzKfiy<V>hME5DOd@9ONoEMHFb$O;->JuJr
 zv+jWqCy^<wW1p~hK6HBCDUml&%5p8&c29<^7$co@isnmqMCk-UF3ykf{`qSY2TTD1
 y-l8B!n9Lyi_PI@V_LyR@Vv3&+rkFV}Wz-i_#(gtI|A#3Wf95?zcAXeKx&H&Nu{aR`
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/data/ghw-cross-format/baseline.native.fst b/tests/data/ghw-cross-format/baseline.native.fst
+new file mode 100644
+index 0000000000000000000000000000000000000000..37926111a8cd0387995a771a7c547a130baa52d0
+GIT binary patch
+literal 249
+zcmeyz00BQB6qBNSHwT2tm7Ku9?B>tG`&9CkQA%5PN%7nCQihL~0zp0jvm|@d{=9hi
+z@X_K2Vls;Y(ilV+>vNpc2>ozcKiFVPh=IvABeRW0hCv2K21bva!aZUSa3mjK(&SQO
+zU|KMtg{dqp?O9hBSDG*zo0(X`fvd$%sxu^|uGu9qCaz%cVOqx^cH)u&qr}-0Cr+@X
+z9(R6uLB6J5V#eg|Pu<;*FMsMT688Rb$|y)e;=jQL1EYd}k0&PmP&j=+;n;-P5mV+y
+tv6TF?|JQWn$(t)e6A~hm{L}(;Crq6-c?Ms~pa1*}2UCxnQDkCZ000)7Vd?+?
 
 literal 0
 HcmV?d00001
@@ -131,6 +147,21 @@ IHG1;?2kRg?nE(I)
 literal 0
 HcmV?d00001
 
+diff --git a/tests/data/ghw-cross-format/delayed.native.fst b/tests/data/ghw-cross-format/delayed.native.fst
+new file mode 100644
+index 0000000000000000000000000000000000000000..4c09985937165bfdb4c3975581cdd5162b470a9b
+GIT binary patch
+literal 259
+zcmeyz00xXq5SmFtzMBKW<VsFpV0QE8;C(9j$|$9+yQKJSdMU$4OMxJtfLW5gX@6e4
+zd-!Pa12LIJ0ci}Pi}g89YJ`3`tsiW#CB(pFn~~W@Bf}sABLkzyPT?N02RM=sFlh>^
+zF)%Hd(85%fmiDZxiz`i-jZIICjm>O9RhpmQ3Ke7L!?)aZ*rRgz*F>CR5`FBrI5Hto
+zmv`yI!UHExoM1~m?)>tCd`-Q?jLF@fy1O4={?uJ0?EU4GQILehe}fGMMg{*KPfYru
+zaQcA4u?e#yrp%3E`Eu0$U(=B%Z>|VUNQg}GQwz|YFm>AG8GI>!{_`{3dTFy+1L$u6
+D&!1(i
+
+literal 0
+HcmV?d00001
+
 diff --git a/tests/data/ghw-cross-format/delayed.vcd b/tests/data/ghw-cross-format/delayed.vcd
 new file mode 100644
 index 0000000000000000000000000000000000000000..e3db05d0ef94fd45450faac81e463f87e4e09dbb
@@ -161,11 +192,11 @@ index 0000000000000000000000000000000000000000..e3db05d0ef94fd45450faac81e463f87
 +0!
 diff --git a/tests/data/ghw-cross-format/generate.py b/tests/data/ghw-cross-format/generate.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..c14482c1e4eab6696c9515ffffe0e2adc39d759b
+index 0000000000000000000000000000000000000000..b021e3b6212b1ee85443ea33ed2f48ba2bd8d2dc
 --- /dev/null
 +++ b/tests/data/ghw-cross-format/generate.py
-@@ -0,0 +1,59 @@
-+"""Regenerate the nine tiny fixtures with GHDL and GTKWave vcd2fst."""
+@@ -0,0 +1,63 @@
++"""Regenerate the GHW, VCD, VCD-derived FST and native FST fixtures."""
 +
 +import argparse
 +from pathlib import Path
@@ -205,13 +236,17 @@ index 0000000000000000000000000000000000000000..c14482c1e4eab6696c9515ffffe0e2ad
 +        files = []
 +        for name, generics in CASES.items():
 +            vcd, ghw, fst = (f"{name}.{ext}" for ext in ("vcd", "ghw", "fst"))
++            native_fst = f"{name}.native.fst"
++            simulate = [ghdl, "-r", "--std=08", "cross_format", *generics]
 +            subprocess.run(
-+                [ghdl, "-r", "--std=08", "cross_format", *generics, f"--wave={ghw}", f"--vcd={vcd}"],
++                [*simulate, f"--wave={ghw}", f"--vcd={vcd}"],
 +                cwd=work,
 +                check=True,
 +            )
 +            subprocess.run([converter, vcd, fst], cwd=work, check=True)
-+            files.extend((ghw, vcd, fst))
++            # A separate run with identical stimulus exercises GHDL's own FST writer.
++            subprocess.run([*simulate, f"--fst={native_fst}"], cwd=work, check=True)
++            files.extend((ghw, vcd, fst, native_fst))
 +
 +        for name in files:
 +            if not (work / name).stat().st_size:
@@ -251,6 +286,20 @@ zgSRNi5hgRp&V4SGy*;K3Sutg%52g%sU`o3$rnLNKN{=6=X#AOci0nEsdh-4UNdq_>
 literal 0
 HcmV?d00001
 
+diff --git a/tests/data/ghw-cross-format/record_change.native.fst b/tests/data/ghw-cross-format/record_change.native.fst
+new file mode 100644
+index 0000000000000000000000000000000000000000..2eebb1c3c3c46108698d7e230c6bf4ddb8e2c7d8
+GIT binary patch
+literal 246
+zcmeyz00Cbi6qCGsHwT2tm7Ku9?B>tG`&9CkQA%5PN%7nCQihL~0zp0jvm|@d{=9hi
+z@X_K2Vls;Y(ilV+>vNpc2>ozcKiFVPh=IvABeRW0hG7Oq21bva!aZUSa3mjK(qvL&
+zU|KMtg~=~1?O9hBSDG*zo0-_Nsu^}^ZEaioBOD}_@%5&)v2HZ+VQ@1xGTP*L^J9S3
+z7xw$|Y|ox7`t#_~k1c-|-8mw(cT<lD+cA3{ogSV!|0|YA*qtyk=rDYuCYHKfj8XP~
+p|9%BSOY5yHDiPCWOy&&XPFea?Wf`;N|NqPk`=1{+l4oLI005jkTh#yn
+
+literal 0
+HcmV?d00001
+
 diff --git a/tests/data/ghw-cross-format/record_change.vcd b/tests/data/ghw-cross-format/record_change.vcd
 new file mode 100644
 index 0000000000000000000000000000000000000000..2590be91af0ff52c65f00cfd3aa149b24ab4a4ae
@@ -280,10 +329,10 @@ index 0000000000000000000000000000000000000000..2590be91af0ff52c65f00cfd3aa149b2
 +#20000000
 +0!
 diff --git a/tests/diff_test.rs b/tests/diff_test.rs
-index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19c066b73b 100644
+index 7fb94063b63493809d48a8eb5a264f8feadf5c13..e1e2c1e5f4fa6a1b5c8756fe276b99a03d901e07 100644
 --- a/tests/diff_test.rs
 +++ b/tests/diff_test.rs
-@@ -1364,3 +1364,136 @@ fn test_cli_filter_invalid_glob_exits_with_error() {
+@@ -1364,3 +1364,182 @@ fn test_cli_filter_invalid_glob_exits_with_error() {
          stderr
      );
  }
@@ -294,6 +343,7 @@ index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19
 +
 +    const DIR: &str = "tests/data/ghw-cross-format";
 +    const MARKER: &str = "cross_format.marker";
++    const FLAG: &str = "cross_format.packet.flag";
 +
 +    fn fixture(stem: &str, format: &str) -> String {
 +        format!("{DIR}/{stem}.{format}")
@@ -326,23 +376,49 @@ index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19
 +        assert_eq!(packet_path("other.packet.flag"), None);
 +    }
 +
-+    fn check_marker(left: &str, right: &str, expected_tick: Option<u64>) {
++    fn check_signal(name: &str, left: &str, right: &str, expected_tick: Option<u64>) {
 +        // A filter matching neither input also returns success.
 +        for path in [left, right] {
-+            let names = run_wavecat_cli(&["--names", "--filter", MARKER, path]);
++            let names = run_wavecat_cli(&["--names", "--filter", name, path]);
 +            check_code(&names, 0);
-+            assert_eq!(String::from_utf8_lossy(&names.stdout).trim(), MARKER);
++            assert_eq!(String::from_utf8_lossy(&names.stdout).trim(), name);
 +        }
-+        let diff = run_wavediff_cli(&["--no-attrs", "--filter", MARKER, left, right]);
++        let diff = run_wavediff_cli(&["--no-attrs", "--filter", name, left, right]);
 +        check_code(&diff, i32::from(expected_tick.is_some()));
 +        if let Some(tick) = expected_tick {
 +            let text = String::from_utf8_lossy(&diff.stdout);
 +            let first = text.lines().find_map(|line| {
 +                let mut words = line.split_whitespace();
 +                let time = words.next()?.parse::<u64>().ok()?;
-+                (words.next()? == MARKER).then_some(time)
++                (words.next()? == name).then_some(time)
 +            });
 +            assert_eq!(first, Some(tick), "{text}");
++        }
++    }
++
++    fn check_missing_record(rich: &str, projection: &str) {
++        for (left, right) in [(rich, projection), (projection, rich)] {
++            let diff = run_wavediff_cli(&["--no-attrs", left, right]);
++            check_code(&diff, 1);
++            let text = String::from_utf8_lossy(&diff.stderr);
++            let owner = format!("Only in {rich}:");
++            let mut valid = false;
++            let mut flag = false;
++            for name in text
++                .lines()
++                .skip_while(|line| line.trim() != owner)
++                .skip(1)
++                .take_while(|line| line.starts_with("    "))
++            {
++                match packet_path(name) {
++                    Some("packet") => (valid, flag) = (true, true),
++                    Some("valid") => valid = true,
++                    Some("flag") => flag = true,
++                    _ => panic!("Unexpected signal {name} in {rich}: {text}"),
++                }
++            }
++            assert!(valid && flag, "Incomplete record inventory: {text}");
++            assert!(!text.contains(&format!("Only in {projection}:")), "{text}");
 +        }
 +    }
 +
@@ -350,11 +426,51 @@ index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19
 +    fn vcd_fst_controls() {
 +        for (left, right) in [("vcd", "fst"), ("fst", "vcd")] {
 +            let baseline = fixture("baseline", left);
-+            check_marker(&baseline, &fixture("baseline", right), None);
-+            check_marker(&baseline, &fixture("delayed", right), Some(10_000_000));
++            check_signal(MARKER, &baseline, &fixture("baseline", right), None);
++            check_signal(
++                MARKER,
++                &baseline,
++                &fixture("delayed", right),
++                Some(10_000_000),
++            );
 +            // Changing only an undumped record field leaves both projections equal.
 +            let diff = run_wavediff_cli(&[&baseline, &fixture("record_change", right)]);
 +            check_code(&diff, 0);
++        }
++    }
++
++    #[test]
++    fn native_fst_retains_the_record_lost_via_vcd() {
++        let native = fixture("baseline", "native.fst");
++        let changed = fixture("record_change", "native.fst");
++        let projected = fixture("baseline", "fst");
++        check_missing_record(&native, &projected);
++        check_signal(MARKER, &native, &projected, None);
++        check_signal(
++            MARKER,
++            &projected,
++            &fixture("delayed", "native.fst"),
++            Some(10_000_000),
++        );
++        for (left, right) in [(&native, &changed), (&changed, &native)] {
++            check_signal(FLAG, left, right, Some(10_000_000));
++        }
++    }
++
++    #[test]
++    #[ignore = "requires GHW reader support with field paths (issue #39)"]
++    fn ghw_and_native_fst_share_record_values() {
++        for (left, right) in [("ghw", "native.fst"), ("native.fst", "ghw")] {
++            let baseline = fixture("baseline", left);
++            let peer = fixture("baseline", right);
++            let changed = fixture("record_change", right);
++            // Matched records and a deliberate field-only change exercise the
++            // same flattened field names printed by wavecat for native FST.
++            let diff = run_wavediff_cli(&["--no-attrs", &baseline, &peer]);
++            check_code(&diff, 0);
++            check_signal(FLAG, &baseline, &peer, None);
++            check_signal(FLAG, &baseline, &changed, Some(10_000_000));
++            check_signal(MARKER, &baseline, &changed, None);
 +        }
 +    }
 +
@@ -365,32 +481,11 @@ index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19
 +        for fmt in ["vcd", "fst"] {
 +            let projection = fixture("baseline", fmt);
 +            let delayed = fixture("delayed", "ghw");
-+            for (left, right) in [(&ghw, &projection), (&projection, &ghw)] {
-+                check_marker(left, right, None);
-+                let diff = run_wavediff_cli(&["--no-attrs", left, right]);
-+                check_code(&diff, 1);
-+                let text = String::from_utf8_lossy(&diff.stderr);
-+                let owner = format!("Only in {ghw}:");
-+                let mut valid = false;
-+                let mut flag = false;
-+                for name in text
-+                    .lines()
-+                    .skip_while(|line| line.trim() != owner)
-+                    .skip(1)
-+                    .take_while(|line| line.starts_with("    "))
-+                {
-+                    match packet_path(name) {
-+                        Some("packet") => (valid, flag) = (true, true),
-+                        Some("valid") => valid = true,
-+                        Some("flag") => flag = true,
-+                        _ => panic!("Unexpected GHW-only signal {name}: {text}"),
-+                    }
-+                }
-+                assert!(valid && flag, "Incomplete record inventory: {text}");
-+                assert!(!text.contains(&format!("Only in {projection}:")), "{text}");
-+            }
-+            check_marker(&projection, &delayed, Some(10_000_000));
-+            check_marker(&delayed, &projection, Some(10_000_000));
++            check_missing_record(&ghw, &projection);
++            check_signal(MARKER, &ghw, &projection, None);
++            check_signal(MARKER, &projection, &ghw, None);
++            check_signal(MARKER, &projection, &delayed, Some(10_000_000));
++            check_signal(MARKER, &delayed, &projection, Some(10_000_000));
 +        }
 +    }
 +
@@ -399,7 +494,7 @@ index 7fb94063b63493809d48a8eb5a264f8feadf5c13..8e0f6011126ecd757aadffe9ea127f19
 +    fn ghw_preserves_record_only_change() {
 +        let baseline = fixture("baseline", "ghw");
 +        let changed = fixture("record_change", "ghw");
-+        check_marker(&baseline, &changed, None);
++        check_signal(MARKER, &baseline, &changed, None);
 +        let diff = run_wavediff_cli(&["--no-attrs", &baseline, &changed]);
 +        check_code(&diff, 1);
 +        assert!(!String::from_utf8_lossy(&diff.stderr).contains("Signal name mismatch:"));
